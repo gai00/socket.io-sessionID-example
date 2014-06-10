@@ -1,0 +1,25 @@
+doctype html
+html
+    head
+        title Jade template
+        script(type='text/javascript', src='/socket.io/socket.io.js')
+        script(type='text/javascript', src='/static/jquery-2.1.1.min.js')
+        script(type='text/javascript').
+            $(window).load(function() {
+                var socket = io();
+                socket.emit('login', {user:'test', pass:'pass'});
+                
+                socket.on('login', function(data) {
+                    $('#socket').text(data);
+                });
+                
+                socket.on('session', function(data) {
+                    $('#session').text(data);
+                });
+            });
+    body
+        div sessionID: #{sessionID} 
+        div Socket.io sessionID: 
+            span#session
+        div Socket.io Msg:
+            span#socket
