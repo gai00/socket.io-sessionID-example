@@ -24,7 +24,7 @@ app.set('views', __dirname + '/views');
 app.set('view engine', 'jade');
 
 // public static
-app.use('/static', express.static(__dirname + '/public'));
+// app.use('/static', express.static(__dirname + '/public'));
 
 app.get('/', 
     function(req, res) {
