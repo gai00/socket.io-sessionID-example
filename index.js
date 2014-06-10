@@ -7,7 +7,7 @@ var express = require('express'),
     cookieParser = require('cookie-parser'),
     bodyParser = require('body-parser'),
     session = require('express-session'),
-    SECRET = 'mastoneSecret',
+    SECRET = 'mySecret',
     PORT = 8000;
 
 // setup middleware
