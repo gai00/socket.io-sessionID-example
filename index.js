@@ -41,6 +41,10 @@ io.on('connection',
         // parse sessionID
         (function(data) {
             cookieParser(SECRET)(data, {}, function(){});
+            // = socket.handshake.cookies
+            console.log(data.cookies);
+            // = socket.handshake.signedCookies
+            console.log(data.signedCookies);
         })(socket.handshake);
         
         // send session to socket.io client
