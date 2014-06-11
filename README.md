@@ -1,7 +1,7 @@
 Socket.io-sessionID-example
 ===============
 
-A Node.js example about Express 4 + Socket.io and handShake sessionID.
+A Node.js example about Express 4 + Socket.io 1.0 and handShake sessionID.
 
 Usage:
 
