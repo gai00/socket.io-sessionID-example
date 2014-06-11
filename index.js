@@ -55,7 +55,7 @@ io.on('connection',
             socket.res = socket.client.request.res;
             socket.next = function(){};
             
-            // excute session cookies function
+            // excute express-session middleware function
             (function(req, res, next) {
                 sessionFunc(req, res, next);
             })(socket.req, socket.res, socket.next);
