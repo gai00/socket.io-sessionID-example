@@ -9,13 +9,14 @@ var express = require('express'),
     bodyParser = require('body-parser'),
     session = require('express-session'),
     SECRET = 'mastoneSecret',
-    sessionFunc = session({
+    sessionArgs = {
         secret: SECRET,
         proxy: true,
         cookie: {
-            maxAge: 1000 * 30
+            maxAge: 1000 * 5
         }
-    }),
+    },
+    sessionFunc = session(sessionArgs),
     PORT = 8000;
 
 // setup middleware
@@ -28,6 +29,7 @@ app.use(sessionFunc);
 app.set('views', __dirname + '/views');
 app.set('view engine', 'jade');
 
+// output html
 app.get('/', 
     function(req, res) {
         res.render('index',
@@ -47,11 +49,8 @@ io.on('connection',
             cookieParser(SECRET)(data, {}, function(){});
             
             // add needed arguments in express-session exports function
-            socket.req = {
-                cookies: data.cookies,
-                signedCookies: data.signedCookies,
-                originalUrl: url.parse(data.headers.referer).path
-            };
+            socket.req = data;
+            socket.req.originalUrl = url.parse(data.headers.referer).path;
             // I'm not sure it's worked...
             socket.res = socket.client.request.res;
             socket.next = function(){};
@@ -61,19 +60,46 @@ io.on('connection',
                 sessionFunc(req, res, next);
             })(socket.req, socket.res, socket.next);
             
-            // add session object (socket.handshake, sessionID)
-            socket.req.session = new session.Session(socket.req, socket.req.sessionID);
+            // if session is not exists then get from sessionStore
+            if(!socket.req.session) {
+                // this function is asynchronous!!
+                // get session data(pure data! no method!)
+                socket.req.sessionStore.get(socket.req.sessionID, function(err, sess) {
+                    if(!sess) {
+                        // send error message to client and disconnect
+                        socket.emit('session', 'no session');
+                        socket.disconnect();
+                    } else {
+                        // create a sesion object with method
+                        socket.req.session = new session.Session(socket.req, sess);
+                        // send sessionID to client
+                        socket.emit('session', socket.req.sessionID);
+                        
+                        //#debug
+                        // console.log("#socket.io, on'connection', socket.req")
+                        // console.log(socket.req);
+                    }
+                });
+            } // end of if(!socket.req.session)
             
-            // send sessionID to client
-            socket.emit('session', socket.req.sessionID);
-            
-            //#debug
-            console.log(socket.req);
-            
-        })(socket.handshake);
+        })(socket.handshake); // end of socket connection init and emit 'session'
         
         socket.on('session', function(data) {
             socket.emit('session', socket.req.sessionID);
+        });
+        
+        socket.on('count', function(data) {
+            var sess = socket.req.session;
+            sess.count = (!!sess.count)? sess.count: 0;
+            sess.count += 1;
+            // you must need to save the state after change session variable
+            sess.save();
+            socket.emit('count', sess.count);
+            //#debug
+            // console.log("#count");
+            // console.log(sess);
+            // console.log("#sessionStore");
+            // console.log(socket.req.sessionStore);
         });
         
         socket.on('login', function(data) {
