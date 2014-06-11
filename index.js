@@ -7,6 +7,8 @@ var express = require('express'),
     compression = require('compression'),
     cookieParser = require('cookie-parser'),
     bodyParser = require('body-parser'),
+    
+    // session
     session = require('express-session'),
     SECRET = 'mastoneSecret',
     sessionArgs = {
