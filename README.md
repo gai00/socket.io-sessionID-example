@@ -11,3 +11,4 @@ Usage:
 
 3. open your browser to localhost:8000
 
+PS: sessionArgs.cookie.maxAge only 5 seconds, socket.io keep link with unlimit cookie age until disconnect.
