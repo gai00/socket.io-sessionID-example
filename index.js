@@ -3,28 +3,30 @@ var express = require('express'),
     http = require('http').Server(app),
     io = require('socket.io')(http),
     
+    url = require('url'),
     compression = require('compression'),
     cookieParser = require('cookie-parser'),
     bodyParser = require('body-parser'),
     session = require('express-session'),
-    SECRET = 'mySecret',
+    SECRET = 'mastoneSecret',
+    sessionFunc = session({
+        secret: SECRET,
+        proxy: true,
+        cookie: {
+            maxAge: 1000 * 30
+        }
+    }),
     PORT = 8000;
 
 // setup middleware
 app.use(compression());
 app.use(cookieParser());
 app.use(bodyParser());
-app.use(session({
-    secret: SECRET,
-    proxy: true
-}));
+app.use(sessionFunc);
 
 // jade template
 app.set('views', __dirname + '/views');
 app.set('view engine', 'jade');
-
-// public static
-// app.use('/static', express.static(__dirname + '/public'));
 
 app.get('/', 
     function(req, res) {
@@ -38,17 +40,41 @@ app.get('/',
 
 io.on('connection',
     function(socket) {
-        // parse sessionID
+        // parse sessionID by session
+        // @param data = socket.handshake
         (function(data) {
+            // parse cookies
             cookieParser(SECRET)(data, {}, function(){});
-            // = socket.handshake.cookies
-            console.log(data.cookies);
-            // = socket.handshake.signedCookies
-            console.log(data.signedCookies);
+            
+            // add needed arguments in express-session exports function
+            socket.req = {
+                cookies: data.cookies,
+                signedCookies: data.signedCookies,
+                originalUrl: url.parse(data.headers.referer).path
+            };
+            // I'm not sure it's worked...
+            socket.res = socket.client.request.res;
+            socket.next = function(){};
+            
+            // excute session cookies function
+            (function(req, res, next) {
+                sessionFunc(req, res, next);
+            })(socket.req, socket.res, socket.next);
+            
+            // add session object (socket.handshake, sessionID)
+            socket.req.session = new session.Session(socket.req, socket.req.sessionID);
+            
+            // send sessionID to client
+            socket.emit('session', socket.req.sessionID);
+            
+            //#debug
+            console.log(socket.req);
+            
         })(socket.handshake);
         
-        // send session to socket.io client
-        socket.emit('session', socket.handshake.signedCookies['connect.sid']);
+        socket.on('session', function(data) {
+            socket.emit('session', socket.req.sessionID);
+        });
         
         socket.on('login', function(data) {
             // check user and pass
