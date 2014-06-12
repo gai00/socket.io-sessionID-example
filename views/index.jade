@@ -15,6 +15,17 @@ html
                 
                 socket.on('session', function(data) {
                     $('#session').text(data);
+                    
+                    setTimeout(function() {
+                        // send request for session
+                        socket.emit('session', "");
+                        // session count
+                        socket.emit('count', "");
+                    }, 1000);
+                });
+                
+                socket.on('count', function(data) {
+                    $('#count').text(data);
                 });
             });
     body
@@ -23,3 +34,5 @@ html
             span#session
         div Socket.io Msg:
             span#socket
+        div Session.Count:
+            span#count
