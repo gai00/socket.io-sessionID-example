@@ -13,4 +13,4 @@ PS: My English is poor.
     2. node index.js
     3. open your browser to localhost:8000
 
-PS: sessionArgs.cookie.maxAge only 5 seconds, socket.io keep link with unlimit cookie age until disconnect.
+PS: Check sessionArgs.cookie.maxAge before test, socket.io keep link with unlimit cookie age until disconnect.
