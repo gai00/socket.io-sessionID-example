@@ -3,22 +3,25 @@ var express = require('express'),
     http = require('http').Server(app),
     io = require('socket.io')(http),
     
-    url = require('url'),
     compression = require('compression'),
     cookieParser = require('cookie-parser'),
     bodyParser = require('body-parser'),
-    
-    // session
     session = require('express-session'),
     SECRET = 'mastoneSecret',
     sessionArgs = {
         secret: SECRET,
         proxy: true,
         cookie: {
-            maxAge: 1000 * 5
+            maxAge: 1000 * 60
         }
     },
     sessionFunc = session(sessionArgs),
+    mwSession = require('./lib/session.js')({
+        session: session,
+        args: sessionArgs,
+        func: sessionFunc
+    }),
+    
     PORT = 8000;
 
 // setup middleware
@@ -42,49 +45,22 @@ app.get('/',
     }
 );
 
+// require './lib/session.js'
+io.use(mwSession);
+
 io.on('connection',
     function(socket) {
-        // parse sessionID by session
-        // @param data = socket.handshake
-        (function(data) {
-            // parse cookies
-            cookieParser(SECRET)(data, {}, function(){});
-            
-            // add needed arguments in express-session exports function
-            socket.req = data;
-            socket.req.originalUrl = url.parse(data.headers.referer).path;
-            // I'm not sure it's worked...
-            socket.res = socket.client.request.res;
-            socket.next = function(){};
-            
-            // excute express-session middleware function
-            (function(req, res, next) {
-                sessionFunc(req, res, next);
-            })(socket.req, socket.res, socket.next);
-            
-            // if session is not exists then get from sessionStore
-            if(!socket.req.session) {
-                // this function is asynchronous!!
-                // get session data(pure data! no method!)
-                socket.req.sessionStore.get(socket.req.sessionID, function(err, sess) {
-                    if(!sess) {
-                        // send error message to client and disconnect
-                        socket.emit('session', 'no session');
-                        socket.disconnect();
-                    } else {
-                        // create a sesion object with method
-                        socket.req.session = new session.Session(socket.req, sess);
-                        // send sessionID to client
-                        socket.emit('session', socket.req.sessionID);
-                        
-                        //#debug
-                        // console.log("#socket.io, on'connection', socket.req")
-                        // console.log(socket.req);
-                    }
-                });
-            } // end of if(!socket.req.session)
-            
-        })(socket.handshake); // end of socket connection init and emit 'session'
+        // when your session is worked will invoke 'ok' event.
+        socket.req.sessionEvents.on('ok', function(sess) {
+            socket.emit('session', socket.req.sessionID);
+            // console.log(socket.req);
+        });
+        // if cannot get session from sessionStore then invoke 'fail' event.
+        socket.req.sessionEvents.on('fail', function(err) {
+            console.log("fail");
+            console.log(err);
+            socket.disconnect();
+        });
         
         socket.on('session', function(data) {
             socket.emit('session', socket.req.sessionID);
