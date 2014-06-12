@@ -1,6 +1,7 @@
 Socket.io-sessionID-example
 ===============
-A Node.js example about Express 4 + Socket.io 1.0 and handShake sessionID.
+A Node.js example about Express 4 + Socket.io 1.0 and handShake sessionID.<br />
+PS: My English is poor.
 ### Environments:
     OS: Virtualbox Ubuntu 14.04 32bit
     IDE: Cloud9 from Github
